@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Extractor</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --surface: #18181b;
+    --border: #2a2a30;
+    --accent: #e8ff47;
+    --accent2: #47c8ff;
+    --text: #f0f0f0;
+    --muted: #888;
+    --font-mono: 'DM Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    gap: 1.5rem;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    flex: 1;
+  }
+
+  @media (max-width: 700px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .panel-header span { color: var(--accent2); font-weight: 500; }
+
+  textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    padding: 1rem;
+    resize: none;
+    line-height: 1.6;
+    min-height: 300px;
+  }
+
+  textarea::placeholder { color: #444; }
+
+  .controls {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    padding: 0.45rem 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+
+  .btn-primary:hover { background: #d4e83d; color: #000; border-color: #d4e83d; }
+
+  .toggle-group {
+    display: flex;
+    gap: 0.3rem;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+
+  .toggle {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .toggle.active { background: #2a2a30; border-color: var(--accent2); color: var(--accent2); }
+  .toggle:hover { border-color: #555; color: var(--text); }
+
+  .output-area {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    min-height: 300px;
+  }
+
+  .char-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .char-card {
+    background: #1f1f24;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.35rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    cursor: default;
+    transition: border-color 0.15s, background 0.15s;
+    min-width: 48px;
+  }
+
+  .char-card:hover { border-color: var(--accent2); background: #232328; }
+
+  .char-glyph {
+    font-size: 1.4rem;
+    line-height: 1;
+    font-family: var(--font-mono), serif;
+  }
+
+  .char-meta {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    color: #555;
+    text-align: center;
+  }
+
+  .char-list {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 2;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  .char-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+
+  .char-table th {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+  }
+
+  .char-table td {
+    padding: 0.35rem 0.6rem;
+    border-bottom: 1px solid #1a1a1e;
+    vertical-align: middle;
+  }
+
+  .char-table tr:hover td { background: #1f1f24; }
+
+  .cat-badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    background: #2a2a30;
+    color: var(--muted);
+  }
+
+  .empty-state {
+    color: #444;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 2rem 0;
+    text-align: center;
+  }
+
+  .stat-bar {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    flex-wrap: wrap;
+  }
+
+  .stat { display: flex; gap: 0.4rem; align-items: center; }
+  .stat-val { color: var(--accent); font-weight: 500; }
+
+  .copy-flash {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--accent);
+    color: #000;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .copy-flash.show { opacity: 1; }
+
+  .sort-select {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.3rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .sort-select:focus { outline: none; border-color: var(--accent2); }
+  .sort-select option { background: #222; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CHAR EXTRACTOR</h1>
+  <span class="subtitle">unicode · multilingual · all scripts</span>
+</header>
+
+<div class="main-grid">
+  <div class="panel">
+    <div class="panel-header">input text <span id="inputCount">0 chars</span></div>
+    <textarea id="inputText" placeholder="Paste your text here — supports any language, Chinese, Arabic, Cyrillic, emoji, special characters…"></textarea>
+    <div class="controls">
+      <button class="btn btn-primary" onclick="extract()">EXTRACT</button>
+      <button class="btn" onclick="clearAll()">CLEAR</button>
+      <div class="toggle-group">
+        <button class="toggle active" id="tog-spaces" onclick="toggle('spaces')">spaces</button>
+        <button class="toggle active" id="tog-punct" onclick="toggle('punct')">punctuation</button>
+        <button class="toggle active" id="tog-digits" onclick="toggle('digits')">digits</button>
+        <button class="toggle active" id="tog-emoji" onclick="toggle('emoji')">emoji</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      unique characters
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <select class="sort-select" id="sortMode" onchange="renderOutput()">
+          <option value="unicode">sort: unicode</option>
+          <option value="alpha">sort: alpha</option>
+          <option value="category">sort: category</option>
+        </select>
+        <select class="sort-select" id="viewMode" onchange="renderOutput()">
+          <option value="grid">view: grid</option>
+          <option value="list">view: list</option>
+          <option value="table">view: table</option>
+        </select>
+      </div>
+    </div>
+    <div class="output-area" id="outputArea">
+      <div class="empty-state">↑ paste text and hit EXTRACT</div>
+    </div>
+    <div class="stat-bar" id="statBar" style="display:none">
+      <div class="stat">unique chars: <span class="stat-val" id="s-unique">0</span></div>
+      <div class="stat">total chars: <span class="stat-val" id="s-total">0</span></div>
+      <div class="stat">scripts: <span class="stat-val" id="s-scripts">0</span></div>
+      <button class="btn" style="margin-left:auto" onclick="copyChars()">COPY ALL</button>
+    </div>
+  </div>
+</div>
+
+<div class="copy-flash" id="copyFlash">Copied!</div>
+
+<script>
+const state = {
+  spaces: true, punct: true, digits: true, emoji: true,
+  chars: []
+};
+
+const inputText = document.getElementById('inputText');
+inputText.addEventListener('input', () => {
+  document.getElementById('inputCount').textContent = [...inputText.value].length + ' chars';
+});
+inputText.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) extract(); });
+
+function toggle(key) {
+  state[key] = !state[key];
+  document.getElementById('tog-' + key).classList.toggle('active', state[key]);
+  renderOutput();
+}
+
+function getCategory(char) {
+  const cp = char.codePointAt(0);
+  if (!cp) return 'other';
+  if (/\s/.test(char)) return 'whitespace';
+  if (/\p{Emoji}/u.test(char) && cp > 127) return 'emoji';
+  if (/\p{N}/u.test(char)) return 'digit';
+  if (/\p{P}|\p{S}/u.test(char)) return 'punctuation';
+  if (cp < 128) return 'ascii-letter';
+  if (cp >= 0x4E00 && cp <= 0x9FFF) return 'CJK';
+  if (cp >= 0x3400 && cp <= 0x4DBF) return 'CJK-ext';
+  if (cp >= 0x0400 && cp <= 0x04FF) return 'Cyrillic';
+  if (cp >= 0x0600 && cp <= 0x06FF) return 'Arabic';
+  if (cp >= 0x0900 && cp <= 0x097F) return 'Devanagari';
+  if (cp >= 0x0370 && cp <= 0x03FF) return 'Greek';
+  if (cp >= 0xAC00 && cp <= 0xD7A3) return 'Korean';
+  if (cp >= 0x3040 && cp <= 0x30FF) return 'Japanese';
+  if (cp >= 0x0590 && cp <= 0x05FF) return 'Hebrew';
+  if (cp >= 0x0E00 && cp <= 0x0E7F) return 'Thai';
+  if (cp >= 0x0100 && cp <= 0x024F) return 'Latin-ext';
+  return 'other';
+}
+
+function shouldInclude(char) {
+  const cat = getCategory(char);
+  if (!state.spaces && cat === 'whitespace') return false;
+  if (!state.punct && cat === 'punctuation') return false;
+  if (!state.digits && cat === 'digit') return false;
+  if (!state.emoji && cat === 'emoji') return false;
+  return true;
+}
+
+function extract() {
+  const text = inputText.value;
+  if (!text.trim()) return;
+
+  const seen = new Set();
+  const result = [];
+
+  for (const char of text) {
+    if (!seen.has(char)) {
+      seen.add(char);
+      result.push({ char, cp: char.codePointAt(0), cat: getCategory(char) });
+    }
+  }
+
+  state.chars = result;
+  renderOutput();
+}
+
+function renderOutput() {
+  const filtered = state.chars.filter(c => shouldInclude(c.char));
+  const sortMode = document.getElementById('sortMode').value;
+  const viewMode = document.getElementById('viewMode').value;
+
+  if (sortMode === 'alpha') filtered.sort((a, b) => a.char.localeCompare(b.char));
+  else if (sortMode === 'unicode') filtered.sort((a, b) => a.cp - b.cp);
+  else if (sortMode === 'category') filtered.sort((a, b) => a.cat.localeCompare(b.cat) || a.cp - b.cp);
+
+  const out = document.getElementById('outputArea');
+
+  if (filtered.length === 0) {
+    out.innerHTML = '<div class="empty-state">no characters to display</div>';
+    document.getElementById('statBar').style.display = 'none';
+    return;
+  }
+
+  if (viewMode === 'grid') {
+    out.innerHTML = '<div class="char-grid">' +
+      filtered.map(c => `<div class="char-card" title="U+${c.cp.toString(16).toUpperCase().padStart(4,'0')} · ${c.cat}">
+        <span class="char-glyph">${escHtml(c.char)}</span>
+        <span class="char-meta">U+${c.cp.toString(16).toUpperCase().padStart(4,'0')}</span>
+      </div>`).join('') + '</div>';
+  } else if (viewMode === 'list') {
+    out.innerHTML = '<div class="char-list">' + filtered.map(c => escHtml(c.char)).join(' ') + '</div>';
+  } else {
+    out.innerHTML = '<table class="char-table"><thead><tr><th>char</th><th>codepoint</th><th>hex</th><th>category</th></tr></thead><tbody>' +
+      filtered.map(c => `<tr>
+        <td style="font-size:1.2rem">${escHtml(c.char)}</td>
+        <td>U+${c.cp.toString(16).toUpperCase().padStart(4,'0')}</td>
+        <td style="color:#555">&#x${c.cp.toString(16).toUpperCase().padStart(4,'0')};</td>
+        <td><span class="cat-badge">${c.cat}</span></td>
+      </tr>`).join('') + '</tbody></table>';
+  }
+
+  const totalChars = [...inputText.value].length;
+  const scripts = new Set(filtered.map(c => c.cat)).size;
+  document.getElementById('s-unique').textContent = filtered.length;
+  document.getElementById('s-total').textContent = totalChars;
+  document.getElementById('s-scripts').textContent = scripts;
+  document.getElementById('statBar').style.display = 'flex';
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function clearAll() {
+  inputText.value = '';
+  state.chars = [];
+  document.getElementById('inputCount').textContent = '0 chars';
+  document.getElementById('outputArea').innerHTML = '<div class="empty-state">↑ paste text and hit EXTRACT</div>';
+  document.getElementById('statBar').style.display = 'none';
+}
+
+function copyChars() {
+  const filtered = state.chars.filter(c => shouldInclude(c.char));
+  navigator.clipboard.writeText(filtered.map(c => c.char).join('')).then(() => {
+    const flash = document.getElementById('copyFlash');
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 1500);
+  });
+}
+</script>
+</body>
+</html>
