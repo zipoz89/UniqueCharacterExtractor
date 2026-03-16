@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Character Extractor</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
 <style>
   :root {
     --bg: #0e0e0f;
@@ -12,6 +13,7 @@
     --border: #2a2a30;
     --accent: #e8ff47;
     --accent2: #47c8ff;
+    --accent3: #ff8c47;
     --text: #f0f0f0;
     --muted: #888;
     --font-mono: 'DM Mono', monospace;
@@ -72,6 +74,34 @@
     overflow: hidden;
   }
 
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab.font-tab.active { color: var(--accent3); border-bottom-color: var(--accent3); }
+
+  .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .tab-content.active { display: flex; }
+
   .panel-header {
     display: flex;
     align-items: center;
@@ -98,7 +128,7 @@
     padding: 1rem;
     resize: none;
     line-height: 1.6;
-    min-height: 300px;
+    min-height: 280px;
   }
 
   textarea::placeholder { color: #444; }
@@ -126,6 +156,7 @@
   }
 
   .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: 0.35; pointer-events: none; }
 
   .btn-primary {
     background: var(--accent);
@@ -135,6 +166,15 @@
   }
 
   .btn-primary:hover { background: #d4e83d; color: #000; border-color: #d4e83d; }
+
+  .btn-font {
+    background: var(--accent3);
+    color: #000;
+    border-color: var(--accent3);
+    font-weight: 500;
+  }
+
+  .btn-font:hover { background: #e87a3a; color: #000; border-color: #e87a3a; }
 
   .toggle-group {
     display: flex;
@@ -158,6 +198,85 @@
   .toggle.active { background: #2a2a30; border-color: var(--accent2); color: var(--accent2); }
   .toggle:hover { border-color: #555; color: var(--text); }
 
+  .font-drop-zone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    margin: 1rem;
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 180px;
+    position: relative;
+  }
+
+  .font-drop-zone:hover, .font-drop-zone.drag-over {
+    border-color: var(--accent3);
+    background: rgba(255, 140, 71, 0.04);
+  }
+
+  .font-drop-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon { font-size: 2rem; line-height: 1; opacity: 0.3; }
+
+  .drop-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .drop-label strong { color: var(--accent3); font-weight: 500; }
+
+  .font-info {
+    background: #1f1f24;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    margin: 0 1rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    display: none;
+    gap: 0.5rem;
+    flex-direction: column;
+  }
+
+  .font-info.visible { display: flex; }
+
+  .font-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .font-info-label { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .font-info-val { color: var(--accent3); }
+
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    margin: 0 1rem 0.5rem;
+    border-radius: 2px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-bar.visible { display: block; }
+  .progress-fill { height: 100%; background: var(--accent3); width: 0%; transition: width 0.3s; }
+
   .output-area {
     flex: 1;
     padding: 1rem;
@@ -165,11 +284,7 @@
     min-height: 300px;
   }
 
-  .char-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
+  .char-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 
   .char-card {
     background: #1f1f24;
@@ -187,11 +302,7 @@
 
   .char-card:hover { border-color: var(--accent2); background: #232328; }
 
-  .char-glyph {
-    font-size: 1.4rem;
-    line-height: 1;
-    font-family: var(--font-mono), serif;
-  }
+  .char-glyph { font-size: 1.4rem; line-height: 1; }
 
   .char-meta {
     font-family: var(--font-mono);
@@ -242,6 +353,20 @@
     color: var(--muted);
   }
 
+  .source-badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .source-text { background: rgba(232,255,71,0.1); color: var(--accent); }
+  .source-font { background: rgba(255,140,71,0.1); color: var(--accent3); }
+
   .empty-state {
     color: #444;
     font-family: var(--font-mono);
@@ -259,6 +384,7 @@
     font-size: 0.7rem;
     color: var(--muted);
     flex-wrap: wrap;
+    align-items: center;
   }
 
   .stat { display: flex; gap: 0.4rem; align-items: center; }
@@ -298,25 +424,77 @@
 
 <header>
   <h1>CHAR EXTRACTOR</h1>
-  <span class="subtitle">unicode · multilingual · all scripts</span>
+  <span class="subtitle">unicode · multilingual · all scripts · font support</span>
 </header>
 
 <div class="main-grid">
+
+  <!-- INPUT PANEL -->
   <div class="panel">
-    <div class="panel-header">input text <span id="inputCount">0 chars</span></div>
-    <textarea id="inputText" placeholder="Paste your text here — supports any language, Chinese, Arabic, Cyrillic, emoji, special characters…"></textarea>
-    <div class="controls">
-      <button class="btn btn-primary" onclick="extract()">EXTRACT</button>
-      <button class="btn" onclick="clearAll()">CLEAR</button>
-      <div class="toggle-group">
-        <button class="toggle active" id="tog-spaces" onclick="toggle('spaces')">spaces</button>
-        <button class="toggle active" id="tog-punct" onclick="toggle('punct')">punctuation</button>
-        <button class="toggle active" id="tog-digits" onclick="toggle('digits')">digits</button>
-        <button class="toggle active" id="tog-emoji" onclick="toggle('emoji')">emoji</button>
+    <div class="tab-bar">
+      <button class="tab active" id="tab-text" onclick="switchTab('text')">📝 text input</button>
+      <button class="tab font-tab" id="tab-font" onclick="switchTab('font')">🔤 font file</button>
+    </div>
+
+    <!-- TEXT TAB -->
+    <div class="tab-content active" id="content-text">
+      <div class="panel-header">paste text <span id="inputCount">0 chars</span></div>
+      <textarea id="inputText" placeholder="Paste your text here — supports any language, Chinese, Arabic, Cyrillic, emoji, special characters…"></textarea>
+      <div class="controls">
+        <button class="btn btn-primary" onclick="extractText()">EXTRACT</button>
+        <button class="btn" onclick="clearAll()">CLEAR</button>
+        <div class="toggle-group">
+          <button class="toggle active" id="tog-spaces" onclick="toggle('spaces')">spaces</button>
+          <button class="toggle active" id="tog-punct" onclick="toggle('punct')">punctuation</button>
+          <button class="toggle active" id="tog-digits" onclick="toggle('digits')">digits</button>
+          <button class="toggle active" id="tog-emoji" onclick="toggle('emoji')">emoji</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FONT TAB -->
+    <div class="tab-content" id="content-font">
+      <div class="panel-header">drop a font file <span style="color:var(--accent3)">TTF · OTF · WOFF</span></div>
+
+      <div class="font-drop-zone" id="dropZone">
+        <input type="file" accept=".ttf,.otf,.woff,.woff2" id="fontFileInput" onchange="handleFontFile(this.files[0])">
+        <div class="drop-icon">⬇</div>
+        <div class="drop-label" id="dropLabel">
+          Drop a <strong>TTF / OTF / WOFF</strong> file here<br>
+          or click to browse<br>
+          <span style="color:#555;font-size:0.65rem">reads cmap table only — no ligatures or font features</span>
+        </div>
+      </div>
+
+      <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
+      <div class="font-info" id="fontInfo">
+        <div class="font-info-row">
+          <span class="font-info-label">family</span>
+          <span class="font-info-val" id="fi-family">—</span>
+        </div>
+        <div class="font-info-row">
+          <span class="font-info-label">style</span>
+          <span class="font-info-val" id="fi-style">—</span>
+        </div>
+        <div class="font-info-row">
+          <span class="font-info-label">version</span>
+          <span class="font-info-val" id="fi-version">—</span>
+        </div>
+        <div class="font-info-row">
+          <span class="font-info-label">cmap entries</span>
+          <span class="font-info-val" id="fi-glyphs">—</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-font" id="extractFontBtn" onclick="extractFont()" disabled>EXTRACT FROM FONT</button>
+        <button class="btn" onclick="clearFont()">CLEAR</button>
       </div>
     </div>
   </div>
 
+  <!-- OUTPUT PANEL -->
   <div class="panel">
     <div class="panel-header">
       unique characters
@@ -334,13 +512,14 @@
       </div>
     </div>
     <div class="output-area" id="outputArea">
-      <div class="empty-state">↑ paste text and hit EXTRACT</div>
+      <div class="empty-state">↑ paste text or drop a font file to extract characters</div>
     </div>
     <div class="stat-bar" id="statBar" style="display:none">
-      <div class="stat">unique chars: <span class="stat-val" id="s-unique">0</span></div>
-      <div class="stat">total chars: <span class="stat-val" id="s-total">0</span></div>
+      <div class="stat">unique: <span class="stat-val" id="s-unique">0</span></div>
+      <div class="stat">total: <span class="stat-val" id="s-total">0</span></div>
       <div class="stat">scripts: <span class="stat-val" id="s-scripts">0</span></div>
-      <button class="btn" style="margin-left:auto" onclick="copyChars()">COPY ALL</button>
+      <span class="source-badge" id="s-source-badge" style="margin-left:auto"></span>
+      <button class="btn" onclick="copyChars()">COPY ALL</button>
     </div>
   </div>
 </div>
@@ -350,14 +529,27 @@
 <script>
 const state = {
   spaces: true, punct: true, digits: true, emoji: true,
-  chars: []
+  chars: [],
+  source: 'text',
+  loadedFont: null,
+  loadedFontName: '',
+  customFontFace: null
 };
 
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('tab-text').classList.toggle('active', tab === 'text');
+  document.getElementById('tab-font').classList.toggle('active', tab === 'font');
+  document.getElementById('content-text').classList.toggle('active', tab === 'text');
+  document.getElementById('content-font').classList.toggle('active', tab === 'font');
+}
+
+// ─── Text input ───────────────────────────────────────────────────────────────
 const inputText = document.getElementById('inputText');
 inputText.addEventListener('input', () => {
   document.getElementById('inputCount').textContent = [...inputText.value].length + ' chars';
 });
-inputText.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) extract(); });
+inputText.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) extractText(); });
 
 function toggle(key) {
   state[key] = !state[key];
@@ -365,9 +557,145 @@ function toggle(key) {
   renderOutput();
 }
 
+function extractText() {
+  const text = inputText.value;
+  if (!text.trim()) return;
+  const seen = new Set();
+  const result = [];
+  for (const char of text) {
+    if (!seen.has(char)) {
+      seen.add(char);
+      result.push({ char, cp: char.codePointAt(0), cat: getCategory(char) });
+    }
+  }
+  state.chars = result;
+  state.source = 'text';
+  renderOutput();
+}
+
+function clearAll() {
+  inputText.value = '';
+  state.chars = [];
+  state.source = 'text';
+  document.getElementById('inputCount').textContent = '0 chars';
+  document.getElementById('outputArea').innerHTML = '<div class="empty-state">↑ paste text or drop a font file to extract characters</div>';
+  document.getElementById('statBar').style.display = 'none';
+}
+
+// ─── Font loading ─────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFontFile(file);
+});
+
+function handleFontFile(file) {
+  if (!file) return;
+  showProgress(true);
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const buffer = e.target.result;
+      const font = opentype.parse(buffer);
+      state.loadedFont = font;
+      state.loadedFontName = font.names.fullName?.en || font.names.fontFamily?.en || file.name;
+
+      // Register font for preview rendering
+      const blob = new Blob([buffer], { type: 'font/ttf' });
+      const url = URL.createObjectURL(blob);
+      const ff = new FontFace('ExtractedFont', `url(${url})`);
+      ff.load().then(loaded => {
+        document.fonts.add(loaded);
+        state.customFontFace = loaded;
+      });
+
+      // Metadata
+      document.getElementById('fi-family').textContent = font.names.fontFamily?.en || '—';
+      document.getElementById('fi-style').textContent = font.names.fontSubfamily?.en || '—';
+      document.getElementById('fi-version').textContent = font.names.version?.en || '—';
+      document.getElementById('fi-glyphs').textContent =
+        Object.keys(font.tables.cmap.glyphIndexMap).length.toLocaleString();
+      document.getElementById('fontInfo').classList.add('visible');
+      document.getElementById('extractFontBtn').disabled = false;
+
+      document.getElementById('dropLabel').innerHTML =
+        `<strong style="color:var(--accent3)">${escHtml(file.name)}</strong><br>
+         <span style="color:#555;font-size:0.65rem">loaded · ${(file.size/1024).toFixed(1)} KB · click to change</span>`;
+
+      showProgress(false);
+    } catch(err) {
+      showProgress(false);
+      alert('Could not parse font: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showProgress(on) {
+  const bar = document.getElementById('progressBar');
+  const fill = document.getElementById('progressFill');
+  bar.classList.toggle('visible', on);
+  if (on) {
+    fill.style.width = '0%';
+    setTimeout(() => fill.style.width = '70%', 50);
+  } else {
+    fill.style.width = '100%';
+    setTimeout(() => bar.classList.remove('visible'), 400);
+  }
+}
+
+function extractFont() {
+  const font = state.loadedFont;
+  if (!font) return;
+
+  // glyphIndexMap keys are unicode codepoints — base chars only, no GSUB/ligatures
+  const cmapMap = font.tables.cmap.glyphIndexMap;
+  const result = [];
+
+  for (const cpStr of Object.keys(cmapMap)) {
+    const cp = parseInt(cpStr, 10);
+    if (cp < 32) continue; // skip control characters
+    try {
+      const char = String.fromCodePoint(cp);
+      result.push({ char, cp, cat: getCategory(char) });
+    } catch(e) { /* skip invalid codepoints */ }
+  }
+
+  result.sort((a, b) => a.cp - b.cp);
+  state.chars = result;
+  state.source = 'font';
+  renderOutput();
+}
+
+function clearFont() {
+  state.loadedFont = null;
+  state.chars = [];
+  state.source = 'text';
+  document.getElementById('fontInfo').classList.remove('visible');
+  document.getElementById('extractFontBtn').disabled = true;
+  document.getElementById('fi-family').textContent = '—';
+  document.getElementById('fi-style').textContent = '—';
+  document.getElementById('fi-version').textContent = '—';
+  document.getElementById('fi-glyphs').textContent = '—';
+  document.getElementById('dropLabel').innerHTML =
+    `Drop a <strong>TTF / OTF / WOFF</strong> file here<br>or click to browse<br>
+     <span style="color:#555;font-size:0.65rem">reads cmap table only — no ligatures or font features</span>`;
+  document.getElementById('fontFileInput').value = '';
+  document.getElementById('outputArea').innerHTML =
+    '<div class="empty-state">↑ paste text or drop a font file to extract characters</div>';
+  document.getElementById('statBar').style.display = 'none';
+}
+
+// ─── Categories ───────────────────────────────────────────────────────────────
 function getCategory(char) {
   const cp = char.codePointAt(0);
-  if (!cp) return 'other';
+  if (!cp && cp !== 0) return 'other';
   if (/\s/.test(char)) return 'whitespace';
   if (/\p{Emoji}/u.test(char) && cp > 127) return 'emoji';
   if (/\p{N}/u.test(char)) return 'digit';
@@ -387,35 +715,17 @@ function getCategory(char) {
   return 'other';
 }
 
-function shouldInclude(char) {
-  const cat = getCategory(char);
-  if (!state.spaces && cat === 'whitespace') return false;
-  if (!state.punct && cat === 'punctuation') return false;
-  if (!state.digits && cat === 'digit') return false;
-  if (!state.emoji && cat === 'emoji') return false;
+function shouldInclude(c) {
+  if (!state.spaces && c.cat === 'whitespace') return false;
+  if (!state.punct && c.cat === 'punctuation') return false;
+  if (!state.digits && c.cat === 'digit') return false;
+  if (!state.emoji && c.cat === 'emoji') return false;
   return true;
 }
 
-function extract() {
-  const text = inputText.value;
-  if (!text.trim()) return;
-
-  const seen = new Set();
-  const result = [];
-
-  for (const char of text) {
-    if (!seen.has(char)) {
-      seen.add(char);
-      result.push({ char, cp: char.codePointAt(0), cat: getCategory(char) });
-    }
-  }
-
-  state.chars = result;
-  renderOutput();
-}
-
+// ─── Render ───────────────────────────────────────────────────────────────────
 function renderOutput() {
-  const filtered = state.chars.filter(c => shouldInclude(c.char));
+  const filtered = state.chars.filter(shouldInclude);
   const sortMode = document.getElementById('sortMode').value;
   const viewMode = document.getElementById('viewMode').value;
 
@@ -431,46 +741,63 @@ function renderOutput() {
     return;
   }
 
+  // When source is font and font is loaded, render glyphs in that font
+  const useCustomFont = state.source === 'font' && state.customFontFace;
+  const glyphStyle = useCustomFont
+    ? 'font-family: ExtractedFont, serif;'
+    : 'font-family: var(--font-mono), serif;';
+
   if (viewMode === 'grid') {
     out.innerHTML = '<div class="char-grid">' +
-      filtered.map(c => `<div class="char-card" title="U+${c.cp.toString(16).toUpperCase().padStart(4,'0')} · ${c.cat}">
-        <span class="char-glyph">${escHtml(c.char)}</span>
-        <span class="char-meta">U+${c.cp.toString(16).toUpperCase().padStart(4,'0')}</span>
+      filtered.map(c => `<div class="char-card" title="U+${hex(c.cp)} · ${c.cat}">
+        <span class="char-glyph" style="${glyphStyle}">${escHtml(c.char)}</span>
+        <span class="char-meta">U+${hex(c.cp)}</span>
       </div>`).join('') + '</div>';
   } else if (viewMode === 'list') {
-    out.innerHTML = '<div class="char-list">' + filtered.map(c => escHtml(c.char)).join(' ') + '</div>';
+    out.innerHTML = `<div class="char-list" style="${glyphStyle}">` +
+      filtered.map(c => escHtml(c.char)).join(' ') + '</div>';
   } else {
-    out.innerHTML = '<table class="char-table"><thead><tr><th>char</th><th>codepoint</th><th>hex</th><th>category</th></tr></thead><tbody>' +
+    out.innerHTML = '<table class="char-table"><thead><tr><th>char</th><th>codepoint</th><th>hex entity</th><th>category</th></tr></thead><tbody>' +
       filtered.map(c => `<tr>
-        <td style="font-size:1.2rem">${escHtml(c.char)}</td>
-        <td>U+${c.cp.toString(16).toUpperCase().padStart(4,'0')}</td>
-        <td style="color:#555">&#x${c.cp.toString(16).toUpperCase().padStart(4,'0')};</td>
+        <td style="font-size:1.2rem;${glyphStyle}">${escHtml(c.char)}</td>
+        <td>U+${hex(c.cp)}</td>
+        <td style="color:#555">&#x${hex(c.cp)};</td>
         <td><span class="cat-badge">${c.cat}</span></td>
       </tr>`).join('') + '</tbody></table>';
   }
 
-  const totalChars = [...inputText.value].length;
+  // Stats
+  const totalChars = state.source === 'font'
+    ? state.chars.length
+    : [...inputText.value].length;
   const scripts = new Set(filtered.map(c => c.cat)).size;
-  document.getElementById('s-unique').textContent = filtered.length;
-  document.getElementById('s-total').textContent = totalChars;
+
+  document.getElementById('s-unique').textContent = filtered.length.toLocaleString();
+  document.getElementById('s-total').textContent = totalChars.toLocaleString();
   document.getElementById('s-scripts').textContent = scripts;
+
+  const badge = document.getElementById('s-source-badge');
+  if (state.source === 'font') {
+    badge.textContent = '🔤 ' + state.loadedFontName;
+    badge.className = 'source-badge source-font';
+  } else {
+    badge.textContent = '📝 text';
+    badge.className = 'source-badge source-text';
+  }
+
   document.getElementById('statBar').style.display = 'flex';
+}
+
+function hex(cp) {
+  return cp.toString(16).toUpperCase().padStart(4, '0');
 }
 
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function clearAll() {
-  inputText.value = '';
-  state.chars = [];
-  document.getElementById('inputCount').textContent = '0 chars';
-  document.getElementById('outputArea').innerHTML = '<div class="empty-state">↑ paste text and hit EXTRACT</div>';
-  document.getElementById('statBar').style.display = 'none';
-}
-
 function copyChars() {
-  const filtered = state.chars.filter(c => shouldInclude(c.char));
+  const filtered = state.chars.filter(shouldInclude);
   navigator.clipboard.writeText(filtered.map(c => c.char).join('')).then(() => {
     const flash = document.getElementById('copyFlash');
     flash.classList.add('show');
